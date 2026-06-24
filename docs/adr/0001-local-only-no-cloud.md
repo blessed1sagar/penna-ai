@@ -1,0 +1,3 @@
+# Local-only inference, no cloud — ever
+
+Privacy is a hard constraint: the assistant processes personal text (emails, messages, notes), so no content may leave the machine. All inference runs locally via on-device models. This is non-negotiable and shapes every other decision — it rules out cloud APIs (Claude, OpenAI) even where they would be higher quality, and it deliberately scopes out tasks that can't be done well on-device (notably NotebookLM-style two-host podcasts, AI image generation, and high-quality TTS), which are parked for future projects rather than built against a cloud service.
