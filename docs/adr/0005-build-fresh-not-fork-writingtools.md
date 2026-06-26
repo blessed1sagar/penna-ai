@@ -1,5 +1,7 @@
 # Build fresh, do not fork WritingTools
 
+> **Note:** the *decision* (build fresh, don't fork) still stands. The UX it describes below ("one hotkey, two modes, a focused floater") predates the menu-bar pivot — the current design is a menu-bar Panel with three modes (Improve/Rephrase/Draft). See ADR-0006.
+
 Research found theJayTea/WritingTools (GPL-3.0, native Swift, Ollama+MLX) already implements ~85% of our design, and forking it would be the fastest path to v1. We chose to build fresh anyway. WritingTools is a broad, feature-rich app; our product is deliberately narrow (one hotkey, two modes, a focused floater, a draft composer). Starting from their codebase would mean inheriting and then stripping complexity we don't want, and it constrains the project under GPL-3.0 copyleft. Building from zero keeps the app minimal, gives full ownership of every decision, and leaves licensing open.
 
 ## Consequences
