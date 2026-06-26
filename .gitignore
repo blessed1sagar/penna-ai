@@ -19,3 +19,7 @@ node_modules/
 Thumbs.db
 .idea/
 CLAUDE.local.md
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
