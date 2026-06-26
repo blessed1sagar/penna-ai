@@ -2,7 +2,9 @@
 /// - `improve`  — minimal grammar / spelling / punctuation correction
 /// - `rephrase` — deliberate rewording
 /// - `draft`    — generate new text from a typed instruction
-public enum Mode: Equatable, CaseIterable {
+// Hashable (not just Equatable) so SwiftUI's Picker can use a Mode as the
+// selection value and tag. Hashable refines Equatable, so existing == still holds.
+public enum Mode: Hashable, CaseIterable {
     case improve
     case rephrase
     case draft
