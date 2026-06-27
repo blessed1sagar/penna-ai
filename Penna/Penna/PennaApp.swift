@@ -4,18 +4,28 @@
 //
 
 import SwiftUI
+import AppKit
 
 @main
 struct PennaApp: App {
+    // The menu-bar icon, the Panel window, and the global Open shortcut all live
+    // in MenuBarController, created at launch. We drive the status item from
+    // AppKit (not MenuBarExtra) so the Open shortcut can open/focus the Panel from
+    // any app — MenuBarExtra can't be presented programmatically (issue #14).
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     var body: some Scene {
-        // MenuBarExtra is the whole app: a single menu-bar icon, no main window.
-        // Combined with the LSUIElement setting (target → Info), this makes Penna
-        // a Dock-less menu-bar agent (ADR-0006).
-        MenuBarExtra("Penna", systemImage: "pencil") {
-            PanelView()
-        }
-        // .window style makes clicking the icon open a small floating panel (room
-        // for our text boxes and buttons) instead of a plain dropdown menu.
-        .menuBarExtraStyle(.window)
+        // The app has no main window — it's a Dock-less menu-bar agent (ADR-0006,
+        // LSUIElement set in target → Info). Settings is an inert scene that keeps
+        // SwiftUI's App happy without putting a window on screen.
+        Settings { EmptyView() }
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var menuBar: MenuBarController?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        menuBar = MenuBarController()
     }
 }
