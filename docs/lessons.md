@@ -1,5 +1,7 @@
 # Lessons Learned
 
+> Note: this file is **not** auto-loaded into an agent's context. It's a normal repo doc — an agent sees it only when it opens the file. The reliably auto-loaded channel each session is the memory system (`MEMORY.md` + recalled memories). Durable behaviour rules therefore live in **both** places.
+
 ## Don't convert "explain it simply" into "decide for me"
 
 **2026-06-16.** During the grill-with-docs session on selection capture, the user said they were confused by both options and asked me to "make every technical decision simple to understand." I treated that as permission to pick the option myself and started writing the ADR. The user stopped me: they wanted a *simpler explanation so they could choose*, not for me to choose.
@@ -29,6 +31,16 @@
 **2026-06-27.** The user asked to always know what I'm recommending and the reason, explained simply.
 
 **Rule:** Whenever I pick an approach (especially when proceeding without asking), lead with a one-line "**I'm doing X because Y**" in plain language — no jargon dumps. The user is a beginner ([[user-beginner-explain-everything]]); a short why beats a long how.
+
+## Explain the git / PR / merge workflow in plain newbie terms
+
+**2026-06-27.** After opening PR #16, I asked "want me to leave PR #16 for you to review and merge, or anything else on #10?" The user (new to git) found the phrasing unclear and asked me to explain it simply.
+
+**Rule:** This user is a beginner with git/GitHub ([[user-beginner-explain-everything]]). When doing or describing any version-control step, explain in plain words *what it means* and *what happens next* — don't assume the vocabulary. Useful framings:
+- **PR (pull request)** = "please merge this finished slice into `main`"; one issue → one PR.
+- **Merge** = the button that actually copies the branch's work into `main`; usually the human's call.
+- **The per-issue loop:** `git checkout main && git pull` → `git checkout -b feat/<thing>` → TDD + commit → push → open one PR that `Closes #<n>` → review → merge → repeat for the next issue.
+- A PR is opened **when one issue's slice is done**, not "at the very end of the project" — there is no single end; each issue is its own slice.
 
 ## The menu-bar app dev loop: run / stop / quit
 
