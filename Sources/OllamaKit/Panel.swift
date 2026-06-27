@@ -52,19 +52,26 @@ public final class PanelModel: ObservableObject {
     }
 
     /// Clipboard auto-fill: prefill the input box from the current clipboard
-    /// contents. Only in Improve (issue #10) — Rephrase auto-fill is issue #11,
-    /// and Draft never auto-fills (CONTEXT.md).
+    /// contents. Applies in Improve and Rephrase; Draft never auto-fills, since
+    /// its input is an instruction the user types, not text to transform (CONTEXT.md).
     public func prefillFromClipboard() {
-        guard selectedMode == .improve else { return }
+        guard selectedMode == .improve || selectedMode == .rephrase else { return }
         input = clipboard.read() ?? ""
     }
 
     /// Run the current mode on the input: send it to the model and show the
-    /// corrected text in the result area. (Improve is the only wired mode in #10.)
+    /// transformed text in the result area, then Auto-copy it. Improve and Rephrase
+    /// are wired (#10, #11); Draft (#12) is owned by another slice and falls back to
+    /// Improve for now so the build stays green without claiming Draft's behavior.
     public func run() async {
         errorMessage = nil
         do {
-            result = try await client.improve(text: input)
+            switch selectedMode {
+            case .rephrase:
+                result = try await client.rephrase(text: input)
+            case .improve, .draft:
+                result = try await client.improve(text: input)
+            }
             // Auto-copy: put the finished result on the clipboard so the user can paste it.
             clipboard.write(result)
         } catch {
