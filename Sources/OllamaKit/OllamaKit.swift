@@ -23,6 +23,19 @@ public enum OllamaError: Error, Equatable {
     case emptyInput
     /// Could not reach the Ollama server (e.g. it isn't running).
     case unreachable
+    /// The configured baseURL points at a non-loopback host. We refuse to send,
+    /// so personal text can never leave the machine (ADR-0001). The macOS
+    /// sandbox can't enforce this — its network entitlement has no host
+    /// granularity — so the guarantee lives here in code.
+    case nonLoopbackHost
+}
+
+/// True only for hosts that stay on this machine: `localhost`, the IPv6
+/// loopback `::1`, and the entire IPv4 loopback block `127.0.0.0/8`.
+func isLoopbackHost(_ host: String?) -> Bool {
+    guard let host else { return false }
+    if host == "localhost" || host == "::1" { return true }
+    return host.hasPrefix("127.")
 }
 
 /// Talks to a local Ollama server's /api/generate endpoint.
@@ -70,6 +83,7 @@ public struct OllamaClient: Sendable {
     /// Pass `temperature` to control randomness (0 = deterministic); omit it to
     /// let Ollama use its default.
     public func generate(prompt: String, temperature: Double? = nil) async throws -> String {
+        guard isLoopbackHost(baseURL.host) else { throw OllamaError.nonLoopbackHost }
         let url = baseURL.appendingPathComponent("api/generate")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -130,6 +144,9 @@ public struct OllamaClient: Sendable {
         return AsyncThrowingStream<String, Error> { continuation in
             let task = Task {
                 do {
+                    guard isLoopbackHost(sendableRequest.url?.host) else {
+                        throw OllamaError.nonLoopbackHost
+                    }
                     let lines: AsyncThrowingStream<String, Error>
                     let response: URLResponse
                     do {
