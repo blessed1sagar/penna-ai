@@ -62,13 +62,24 @@ public final class PanelModel: ObservableObject {
         self.clipboard = clipboard
     }
 
-    /// Switch the Panel to `mode` and apply the side effect that depends on the
-    /// mode change — which is why the view calls this instead of binding the
-    /// Picker straight to `selectedMode`. Switching INTO Draft clears the input
-    /// box (Draft takes a typed instruction, never clipboard text — CONTEXT.md).
+    /// Switch the Panel to `mode` and apply the mode's side effect in one call.
+    /// Kept for programmatic/test use; the SwiftUI view instead binds the Picker
+    /// straight to `selectedMode` and calls `applyModeSideEffects()` from
+    /// `.onChange`, because running the side effect inside the Picker's binding
+    /// setter mutated `@Published` state *during* a view-update pass — which
+    /// SwiftUI forbids ("Publishing changes from within view updates", issue #25).
     public func selectMode(_ mode: Mode) {
         selectedMode = mode
-        if mode == .draft {
+        applyModeSideEffects()
+    }
+
+    /// Apply the side effect that depends on the current mode, after the mode has
+    /// been set. Switching INTO Draft clears the input box (Draft takes a typed
+    /// instruction, never clipboard text — CONTEXT.md); any other mode restores
+    /// Clipboard auto-fill. Split out from `selectMode` so the view can run it
+    /// from `.onChange` — i.e. *after* the view update, not during it (issue #25).
+    public func applyModeSideEffects() {
+        if selectedMode == .draft {
             input = ""
         } else {
             // Leaving Draft (or moving between auto-fill modes) restores Clipboard
