@@ -79,30 +79,42 @@ public final class PanelModel: ObservableObject {
     }
 
     /// Clipboard auto-fill: prefill the input box from the current clipboard
-    /// contents. Only in Improve (issue #10) — Rephrase auto-fill is issue #11,
-    /// and Draft never auto-fills (CONTEXT.md).
+    /// contents. Applies in Improve and Rephrase; Draft never auto-fills, since
+    /// its input is an instruction the user types, not text to transform (CONTEXT.md).
     public func prefillFromClipboard() {
-        guard selectedMode == .improve else { return }
+        guard selectedMode == .improve || selectedMode == .rephrase else { return }
         input = clipboard.read() ?? ""
     }
 
-    /// Run the current mode on the input: send it to the model and show the
-    /// result. Improve corrects the text; Draft generates new text from the
-    /// instruction (the input). Rephrase is a sibling agent's job (#11) — until
-    /// it's wired it falls back to Improve so the build stays green.
+    /// Run the current mode on the input: stream the model's output progressively
+    /// into the result area, then Auto-copy the finished text. All three modes
+    /// (Improve #10, Rephrase #11, Draft #12) are wired.
     public func run() async {
         errorMessage = nil
+        result = ""
         do {
-            switch selectedMode {
-            case .draft:
-                result = try await client.draft(instruction: input)
-            case .improve, .rephrase:
-                result = try await client.improve(text: input)
+            // Mode-agnostic streaming consumption: pick the stream for the current
+            // mode, then surface each cumulative snapshot into `result` so the text
+            // appears progressively as the model generates it.
+            for try await snapshot in stream(for: selectedMode) {
+                result = snapshot
             }
-            // Auto-copy: put the finished result on the clipboard so the user can paste it.
+            // Auto-copy: only ONCE the stream has finished — never on partial output.
             clipboard.write(result)
         } catch {
             errorMessage = Self.message(for: error)
+        }
+    }
+
+    /// The progressive text stream for a given mode — all three are wired.
+    private func stream(for mode: Mode) -> AsyncThrowingStream<String, Error> {
+        switch mode {
+        case .improve:
+            return client.improveStream(text: input)
+        case .rephrase:
+            return client.rephraseStream(text: input)
+        case .draft:
+            return client.draftStream(instruction: input)
         }
     }
 
