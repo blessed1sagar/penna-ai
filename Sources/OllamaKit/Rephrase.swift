@@ -20,4 +20,23 @@ extension OllamaClient {
         """
         return try await generate(prompt: prompt, temperature: 0.7)
     }
+
+    /// Streaming "Rephrase" brain: same rewording prompt and temperature as
+    /// `rephrase`, but yields the reworded text PROGRESSIVELY (cumulative
+    /// snapshots) so the Panel can show it as the model generates. Rejects blank
+    /// input up front, before any model call, exactly like `rephrase`.
+    public func rephraseStream(text: String) -> AsyncThrowingStream<String, Error> {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return AsyncThrowingStream { $0.finish(throwing: OllamaError.emptyInput) }
+        }
+
+        let prompt = """
+        Reword and restructure the text below so it says the same thing in a \
+        different way. Preserve the meaning but change the wording and sentence \
+        structure. Return only the reworded text, with no commentary or quotation marks.
+
+        \(text)
+        """
+        return generateStream(prompt: prompt, temperature: 0.7)
+    }
 }

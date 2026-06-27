@@ -59,23 +59,38 @@ public final class PanelModel: ObservableObject {
         input = clipboard.read() ?? ""
     }
 
-    /// Run the current mode on the input: send it to the model and show the
-    /// transformed text in the result area, then Auto-copy it. Improve and Rephrase
-    /// are wired (#10, #11); Draft (#12) is owned by another slice and falls back to
-    /// Improve for now so the build stays green without claiming Draft's behavior.
+    /// Run the current mode on the input: stream the model's output progressively
+    /// into the result area, then Auto-copy the finished text. Improve and Rephrase
+    /// are wired (#10, #11); Draft (#12) is owned by another slice.
     public func run() async {
         errorMessage = nil
+        result = ""
         do {
-            switch selectedMode {
-            case .rephrase:
-                result = try await client.rephrase(text: input)
-            case .improve, .draft:
-                result = try await client.improve(text: input)
+            // Mode-agnostic streaming consumption: pick the stream for the current
+            // mode, then surface each cumulative snapshot into `result` so the text
+            // appears progressively as the model generates it.
+            for try await snapshot in stream(for: selectedMode) {
+                result = snapshot
             }
-            // Auto-copy: put the finished result on the clipboard so the user can paste it.
+            // Auto-copy: only ONCE the stream has finished — never on partial output.
             clipboard.write(result)
         } catch {
             errorMessage = Self.message(for: error)
+        }
+    }
+
+    /// The progressive text stream for a given mode. Improve and Rephrase are
+    /// wired; Draft (#12) will return its own stream at merge time.
+    private func stream(for mode: Mode) -> AsyncThrowingStream<String, Error> {
+        switch mode {
+        case .improve:
+            return client.improveStream(text: input)
+        case .rephrase:
+            return client.rephraseStream(text: input)
+        case .draft:
+            // Not wired yet (issue #12). Surface a generic error rather than
+            // silently doing nothing if somehow reached.
+            return AsyncThrowingStream { $0.finish(throwing: OllamaError.emptyInput) }
         }
     }
 
