@@ -19,3 +19,12 @@ node_modules/
 Thumbs.db
 .idea/
 CLAUDE.local.md
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
+
+# Xcode — personal/editor state and build output (never commit these)
+xcuserdata/
+*.xcuserstate
+DerivedData/
