@@ -19,6 +19,17 @@ public enum Mode: Hashable, CaseIterable {
         case .draft: "Draft"
         }
     }
+
+    /// The placeholder shown in the empty input box. Improve/Rephrase work on
+    /// existing text (auto-filled or pasted); Draft takes an instruction
+    /// describing what to write (CONTEXT.md). Kept here so the view reads it from
+    /// one source of truth rather than hard-coding strings.
+    public var placeholder: String {
+        switch self {
+        case .improve, .rephrase: "Paste or type text…"
+        case .draft: "Tell me what to write…"
+        }
+    }
 }
 
 /// The state and behaviour behind the Panel UI, kept here (in the testable Swift
@@ -51,6 +62,22 @@ public final class PanelModel: ObservableObject {
         self.clipboard = clipboard
     }
 
+    /// Switch the Panel to `mode` and apply the side effect that depends on the
+    /// mode change — which is why the view calls this instead of binding the
+    /// Picker straight to `selectedMode`. Switching INTO Draft clears the input
+    /// box (Draft takes a typed instruction, never clipboard text — CONTEXT.md).
+    public func selectMode(_ mode: Mode) {
+        selectedMode = mode
+        if mode == .draft {
+            input = ""
+        } else {
+            // Leaving Draft (or moving between auto-fill modes) restores Clipboard
+            // auto-fill. prefillFromClipboard enforces which modes actually fill,
+            // so Rephrase (#11) extends behaviour there, not here.
+            prefillFromClipboard()
+        }
+    }
+
     /// Clipboard auto-fill: prefill the input box from the current clipboard
     /// contents. Applies in Improve and Rephrase; Draft never auto-fills, since
     /// its input is an instruction the user types, not text to transform (CONTEXT.md).
@@ -60,8 +87,8 @@ public final class PanelModel: ObservableObject {
     }
 
     /// Run the current mode on the input: stream the model's output progressively
-    /// into the result area, then Auto-copy the finished text. Improve and Rephrase
-    /// are wired (#10, #11); Draft (#12) is owned by another slice.
+    /// into the result area, then Auto-copy the finished text. All three modes
+    /// (Improve #10, Rephrase #11, Draft #12) are wired.
     public func run() async {
         errorMessage = nil
         result = ""
@@ -79,8 +106,7 @@ public final class PanelModel: ObservableObject {
         }
     }
 
-    /// The progressive text stream for a given mode. Improve and Rephrase are
-    /// wired; Draft (#12) will return its own stream at merge time.
+    /// The progressive text stream for a given mode — all three are wired.
     private func stream(for mode: Mode) -> AsyncThrowingStream<String, Error> {
         switch mode {
         case .improve:
@@ -88,9 +114,7 @@ public final class PanelModel: ObservableObject {
         case .rephrase:
             return client.rephraseStream(text: input)
         case .draft:
-            // Not wired yet (issue #12). Surface a generic error rather than
-            // silently doing nothing if somehow reached.
-            return AsyncThrowingStream { $0.finish(throwing: OllamaError.emptyInput) }
+            return client.draftStream(instruction: input)
         }
     }
 

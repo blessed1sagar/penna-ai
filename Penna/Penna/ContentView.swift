@@ -26,7 +26,13 @@ struct PanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             // Mode selector — built from Mode.allCases so the list and its order
             // come from the package, not hard-coded here. Improve is preselected.
-            Picker("Mode", selection: $model.selectedMode) {
+            // The selection is bound through selectMode(_:) (not straight to
+            // selectedMode) so a mode change fires its side effects: switching
+            // into Draft clears the box, switching back restores Clipboard auto-fill.
+            Picker("Mode", selection: Binding(
+                get: { model.selectedMode },
+                set: { model.selectMode($0) }
+            )) {
                 ForEach(Mode.allCases, id: \.self) { mode in
                     Text(mode.title).tag(mode)
                 }
@@ -34,11 +40,23 @@ struct PanelView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            // Editable multiline input box.
+            // Editable multiline input box. When empty, it shows the current
+            // mode's placeholder (e.g. Draft's "Tell me what to write…"), read
+            // from the model so the copy lives in one place.
             TextEditor(text: $model.input)
                 .font(.body)
                 .frame(minHeight: 100)
                 .padding(4)
+                .overlay(alignment: .topLeading) {
+                    if inputIsBlank {
+                        Text(model.selectedMode.placeholder)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 12)
+                            .allowsHitTesting(false)
+                    }
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(.secondary.opacity(0.3))
