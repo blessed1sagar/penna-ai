@@ -3,7 +3,9 @@ import Foundation
 /// A "way to fetch": given a request, hand back the data and the HTTP response.
 /// Real code uses URLSession; tests pass a fake that returns a canned body.
 /// This is the seam that makes the client testable without a live server.
-public typealias Transport = (URLRequest) async throws -> (Data, URLResponse)
+/// `@Sendable` so the client can be used from an actor (e.g. the main-actor Panel)
+/// across the async boundary without data-race warnings.
+public typealias Transport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
 /// Errors the client can surface to its caller.
 public enum OllamaError: Error, Equatable {
@@ -16,7 +18,8 @@ public enum OllamaError: Error, Equatable {
 }
 
 /// Talks to a local Ollama server's /api/generate endpoint.
-public struct OllamaClient {
+/// `Sendable` (all members are): callable from any actor, including the Panel.
+public struct OllamaClient: Sendable {
     private let baseURL: URL
     private let model: String
     private let transport: Transport

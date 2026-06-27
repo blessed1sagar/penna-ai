@@ -4,7 +4,7 @@ import Testing
 // Slice 1 (tracer bullet): a freshly-opened Panel starts in Improve mode.
 // ADR-0006 lists three modes (Improve / Rephrase / Draft); Improve is the
 // default because it's the most common, lowest-risk action (minimal correction).
-@Test func panelStartsInImproveMode() {
+@Test @MainActor func panelStartsInImproveMode() {
     let model = PanelModel()
 
     #expect(model.selectedMode == .improve)

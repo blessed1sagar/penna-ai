@@ -18,6 +18,18 @@
 
 **Rule:** Never `git add -A` / `git add .` blindly — stage the *exact* files the change needs. Xcode editor state (`xcuserdata/`, `*.xcuserstate`) and build output (`DerivedData/`) must be in `.gitignore` and never committed. Run the **`pre-commit-check`** skill before every commit; it catches all of this.
 
+## On `ready-for-agent` (AFK) issues, decide and proceed — don't gate on the user
+
+**2026-06-27.** Starting issue #10 (labeled `ready-for-agent` = "Fully specified, AFK-agent ready"), I stopped to ask the user two design questions (Panel logic shape, auto-fill scope) — even though both answers were already dictated by the existing ADRs and the issue's scope. The user pushed back: if it's an AFK task, why is input required?
+
+**Rule:** When an issue is `ready-for-agent` / meant to be done AFK, the global "always ask before non-trivial decisions" rule is overridden. **Make the call myself using the ADRs + issue scope, state the assumption in one plain line, and proceed.** Only stop for a genuinely blocking ambiguity that the docs can't resolve. (Contrast with the interactive grill/design sessions in the first lesson above, where the user *is* in the loop and wants to choose — there, explain and let them pick.)
+
+## Always say what I'm suggesting and why — in very simple terms
+
+**2026-06-27.** The user asked to always know what I'm recommending and the reason, explained simply.
+
+**Rule:** Whenever I pick an approach (especially when proceeding without asking), lead with a one-line "**I'm doing X because Y**" in plain language — no jargon dumps. The user is a beginner ([[user-beginner-explain-everything]]); a short why beats a long how.
+
 ## The menu-bar app dev loop: run / stop / quit
 
 **2026-06-26.** Pressing ⌘R repeatedly in Xcode without stopping spawned duplicate menu-bar icons (multiple live instances of Penna). Because a menu-bar app has no Dock icon or window, it was unclear how to quit, and a paused debugger showing assembly looked like a crash (it wasn't).
