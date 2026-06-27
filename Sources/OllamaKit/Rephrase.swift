@@ -7,6 +7,10 @@ extension OllamaClient {
     /// This is the "Rephrase" mode brain (ADR-0006): deliberate rewording, in
     /// contrast to Improve, which only fixes what's broken.
     public func rephrase(text: String) async throws -> String {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw OllamaError.emptyInput
+        }
+
         let prompt = """
         Reword and restructure the text below so it says the same thing in a \
         different way. Preserve the meaning but change the wording and sentence \
