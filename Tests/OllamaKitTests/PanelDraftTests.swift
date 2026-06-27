@@ -121,3 +121,40 @@ private func clientReturning(_ response: String, recorder: RequestRecorder? = ni
 
     #expect(model.input == "teh cat sat on teh mat")
 }
+
+// Issue #25 regression: the Picker used to call selectMode() from its binding's
+// setter, which mutated @Published state *during* a SwiftUI view update
+// ("Publishing changes from within view updates"). The view now binds straight to
+// `selectedMode` and runs the side effect from `.onChange`, i.e. AFTER the update.
+// These two tests mirror that exact two-step flow — set the mode directly, then
+// applyModeSideEffects() — to prove the side effect still fires without going
+// through selectMode().
+@Test @MainActor func applyingSideEffectsAfterSwitchingIntoDraftClearsInput() {
+    let model = PanelModel(
+        client: clientReturning("unused"),
+        clipboard: FakeClipboard(contents: "teh cat sat on teh mat")
+    )
+    model.input = "teh cat sat on teh mat"
+
+    // What the view does: the Picker's direct binding sets the mode, then
+    // .onChange fires the side effect.
+    model.selectedMode = .draft
+    model.applyModeSideEffects()
+
+    #expect(model.input.isEmpty)
+}
+
+@Test @MainActor func applyingSideEffectsAfterLeavingDraftRestoresAutoFill() {
+    let model = PanelModel(
+        client: clientReturning("unused"),
+        clipboard: FakeClipboard(contents: "teh cat sat on teh mat")
+    )
+    model.selectedMode = .draft
+    model.applyModeSideEffects()
+    #expect(model.input.isEmpty) // Draft cleared it
+
+    model.selectedMode = .improve
+    model.applyModeSideEffects()
+
+    #expect(model.input == "teh cat sat on teh mat")
+}

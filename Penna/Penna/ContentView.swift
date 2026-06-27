@@ -32,12 +32,19 @@ struct PanelView: View {
         VStack(alignment: .leading, spacing: 12) {
             // Mode selector — built from Mode.allCases so the list and its order
             // come from the package, not hard-coded here. Improve is preselected.
-            // The selection is bound through selectMode(_:) (not straight to
-            // selectedMode) so a mode change fires its side effects: switching
-            // into Draft clears the box, switching back restores Clipboard auto-fill.
+            // The setter defers the whole mode switch to the next main-actor turn
+            // before it touches the model. SwiftUI invokes this setter while it is
+            // mid view-update — the segmented control commits the selection during
+            // the panel's layout pass — and selectMode() mutates @Published state
+            // (selectedMode AND input). Mutating inline, whether through this binding
+            // or a direct $model.selectedMode binding, trips "Publishing changes from
+            // within view updates"; hopping a turn moves every mutation cleanly after
+            // the render (issue #25). The selection shows ~one frame late, invisibly.
             Picker("Mode", selection: Binding(
                 get: { model.selectedMode },
-                set: { model.selectMode($0) }
+                set: { newMode in
+                    Task { @MainActor in model.selectMode(newMode) }
+                }
             )) {
                 ForEach(Mode.allCases, id: \.self) { mode in
                     Text(mode.title).tag(mode)
