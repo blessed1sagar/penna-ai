@@ -20,6 +20,10 @@ import OllamaKit
 final class MenuBarController: NSObject, NSWindowDelegate {
     private let statusItem: NSStatusItem
     private let panel: NSPanel
+    // One model for the app's lifetime, shared with the Panel view. Owning it here
+    // (rather than letting the view make its own) lets us refresh the clipboard on
+    // every open and keeps the view stable across hide/show.
+    private let model = PanelModel()
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -39,8 +43,8 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         configurePanel()
 
         // The hotkey and the icon both funnel into toggle(), so they share one
-        // surface and one behaviour.
-        OpenShortcut.onTrigger { [weak self] in self?.show() }
+        // surface and one behaviour — press once to open, again to close.
+        OpenShortcut.onTrigger { [weak self] in self?.toggle() }
     }
 
     private func configureStatusItem() {
@@ -63,8 +67,10 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
         panel.delegate = self
-        // Size the window to the SwiftUI content.
-        panel.contentViewController = NSHostingController(rootView: PanelView())
+        // Build the view once and size the window to its SwiftUI content. Reusing
+        // it (instead of rebuilding on each open) avoids an AppKit layout-recursion
+        // warning; the clipboard is refreshed in show() instead.
+        panel.contentViewController = NSHostingController(rootView: PanelView(model: model))
     }
 
     /// Toggle the Panel: a second icon click (or hotkey) while it's up hides it.
@@ -77,10 +83,9 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 
     /// Open and focus the Panel — works even when another app is frontmost.
-    /// Rebuilds the SwiftUI tree each time so .onAppear re-runs (clipboard
-    /// auto-fill fires on every open, matching the old MenuBarExtra behaviour).
+    /// Refreshes the clipboard auto-fill on every open (the view itself is reused).
     private func show() {
-        panel.contentViewController = NSHostingController(rootView: PanelView())
+        model.prefillFromClipboard()
         positionBelowStatusItem()
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)

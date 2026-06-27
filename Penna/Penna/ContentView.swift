@@ -14,9 +14,15 @@ import OllamaKit
 struct PanelView: View {
     // All Panel state and behaviour (input, result, errors, auto-fill, run,
     // auto-copy) lives in PanelModel from the OllamaKit package, so it's the same
-    // tested logic — not a copy hand-written in the view (ADR-0007). @StateObject:
-    // the view owns one instance for its lifetime and re-renders when it changes.
-    @StateObject private var model = PanelModel()
+    // tested logic — not a copy hand-written in the view (ADR-0007). The model is
+    // owned by MenuBarController and injected here, so it survives the Panel being
+    // hidden/reshown (the controller refreshes the clipboard on each open) — the
+    // view is built once, which also avoids an AppKit layout-recursion warning.
+    @ObservedObject private var model: PanelModel
+
+    init(model: PanelModel) {
+        self.model = model
+    }
 
     private var inputIsBlank: Bool {
         model.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -103,12 +109,12 @@ struct PanelView: View {
         }
         .padding()
         .frame(width: 360)
-        // Clipboard auto-fill: when the Panel opens, prefill the input from the
-        // clipboard (Improve only, enforced inside the model).
-        .onAppear { model.prefillFromClipboard() }
+        // Clipboard auto-fill (prefill the input from the clipboard, Improve only)
+        // is driven by MenuBarController on every open, not via .onAppear here —
+        // the view is reused across opens, so .onAppear would fire only once.
     }
 }
 
 #Preview {
-    PanelView()
+    PanelView(model: PanelModel())
 }
