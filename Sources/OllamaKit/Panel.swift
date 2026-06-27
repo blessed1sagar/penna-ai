@@ -70,6 +70,11 @@ public final class PanelModel: ObservableObject {
         selectedMode = mode
         if mode == .draft {
             input = ""
+        } else {
+            // Leaving Draft (or moving between auto-fill modes) restores Clipboard
+            // auto-fill. prefillFromClipboard enforces which modes actually fill,
+            // so Rephrase (#11) extends behaviour there, not here.
+            prefillFromClipboard()
         }
     }
 
@@ -82,11 +87,18 @@ public final class PanelModel: ObservableObject {
     }
 
     /// Run the current mode on the input: send it to the model and show the
-    /// corrected text in the result area. (Improve is the only wired mode in #10.)
+    /// result. Improve corrects the text; Draft generates new text from the
+    /// instruction (the input). Rephrase is a sibling agent's job (#11) — until
+    /// it's wired it falls back to Improve so the build stays green.
     public func run() async {
         errorMessage = nil
         do {
-            result = try await client.improve(text: input)
+            switch selectedMode {
+            case .draft:
+                result = try await client.draft(instruction: input)
+            case .improve, .rephrase:
+                result = try await client.improve(text: input)
+            }
             // Auto-copy: put the finished result on the clipboard so the user can paste it.
             clipboard.write(result)
         } catch {
