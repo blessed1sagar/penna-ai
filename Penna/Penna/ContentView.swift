@@ -9,22 +9,17 @@ import SwiftUI
 import AppKit
 import OllamaKit
 
-/// The Panel that opens from the menu-bar icon. This is the issue #9 shell:
-/// the full layout is here, but nothing is wired to the model yet — wiring the
-/// brain and the clipboard is issue #10.
+/// The Panel that opens from the menu-bar icon. The layout is the issue #9 shell;
+/// issue #10 wires it to the brain and the clipboard via PanelModel.
 struct PanelView: View {
-    // Panel state lives in PanelModel (from the OllamaKit package), so the
-    // selected mode and its Improve default are the same tested logic, not a
-    // copy hand-written in the view.
-    @State private var model = PanelModel()
-
-    // The text being worked on and the model's result. Plain UI state for now;
-    // #10 fills `input` from the clipboard (Improve/Rephrase) and `result` from Ollama.
-    @State private var input = ""
-    @State private var result = ""
+    // All Panel state and behaviour (input, result, errors, auto-fill, run,
+    // auto-copy) lives in PanelModel from the OllamaKit package, so it's the same
+    // tested logic — not a copy hand-written in the view (ADR-0007). @StateObject:
+    // the view owns one instance for its lifetime and re-renders when it changes.
+    @StateObject private var model = PanelModel()
 
     private var inputIsBlank: Bool {
-        input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        model.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
@@ -40,7 +35,7 @@ struct PanelView: View {
             .labelsHidden()
 
             // Editable multiline input box.
-            TextEditor(text: $input)
+            TextEditor(text: $model.input)
                 .font(.body)
                 .frame(minHeight: 100)
                 .padding(4)
@@ -49,16 +44,24 @@ struct PanelView: View {
                         .stroke(.secondary.opacity(0.3))
                 )
 
-            // Run button — present but inert in this slice. ⌘↵ runs it too.
+            // Run button — sends the input to the model. ⌘↵ runs it too. Disabled
+            // on blank input so an empty run never reaches the model.
             Button("Run") {
-                // TODO(#10): call the selected mode's brain and show the result.
+                Task { await model.run() }
             }
             .keyboardShortcut(.return, modifiers: .command)
             .disabled(inputIsBlank)
 
-            // Result area — empty for now; #10 fills it with the model's output.
+            // A clear error (e.g. Ollama not running) instead of a hang or crash.
+            if let errorMessage = model.errorMessage {
+                Text(errorMessage)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+            }
+
+            // Result area — the model's corrected text (also Auto-copied).
             ScrollView {
-                Text(result)
+                Text(model.result)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
@@ -82,6 +85,9 @@ struct PanelView: View {
         }
         .padding()
         .frame(width: 360)
+        // Clipboard auto-fill: when the Panel opens, prefill the input from the
+        // clipboard (Improve only, enforced inside the model).
+        .onAppear { model.prefillFromClipboard() }
     }
 }
 
