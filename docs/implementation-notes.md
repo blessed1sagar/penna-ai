@@ -44,6 +44,18 @@ Still applies to v1 — but now it is the **Open shortcut** (opens/focuses the m
 Use **`KeyboardShortcuts`** by Sindre Sorhus — actively maintained, SwiftUI-native, ships a `Recorder` view for user rebinding, sandbox-safe. Wraps Carbon `RegisterEventHotKey` (still the de-facto API). Avoid an Option-only default modifier (a macOS 15 bug stopped those firing); ⌃⌥ + a key is safer.
 Ref: [github.com/sindresorhus/KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts)
 
+The default (`⌃⌥P`) is declared in the testable package as `KeyboardShortcuts.Name.openPanel` (`Sources/OllamaKit/OpenShortcut.swift`, ADR-0007), with unit tests guarding it against the Option-only regression. The app registers its handler via the `OpenShortcut.onTrigger` wrapper, so the KeyboardShortcuts import stays inside the package and the app picks it up transitively.
+
+**Avoid Space in the default.** Space-based combos are a minefield of reserved macOS shortcuts — `⌘Space` (Spotlight), `⌃Space`/`⌃⌥Space` (input-source switching), `⌃⌘Space` (emoji picker), `⌥⌘Space` (Finder search). `⌃⌥Space` (the original default) stays reserved at the Carbon level *even when the Keyboard pane shows it disabled*, so `RegisterEventHotKey` fails silently — the menu-bar icon still opens the Panel but the hotkey does nothing. A ⌃⌥ + **letter** combo (P for Penna) registers cleanly. Note: changing the code default does **not** override a binding already persisted to the app's `UserDefaults` (`KeyboardShortcuts_openPanel`); clear that key (or rebind via a Recorder) for the new default to take effect.
+
+## Presenting the Panel (issue #14)
+
+The Open shortcut must *open and focus* the Panel from any frontmost app. SwiftUI's `MenuBarExtra` (the issue #9 shell) has no public API to present its popover programmatically, so v1 drives the menu bar from AppKit instead: an `NSStatusItem` (the icon) plus an `NSPanel` we own (`Penna/Penna/MenuBarController.swift`). Both the icon click and the hotkey funnel into the same `show()` — one surface, as ADR-0006 intends (a Dock-less menu-bar Panel); only the presentation mechanism changed from `MenuBarExtra` to a hand-rolled status item.
+
+- The panel is `.titled` (required for text input to accept focus) with the title/chrome hidden, `isFloatingPanel = true`.
+- Showing calls `NSApp.activate(ignoringOtherApps:)` then `makeKeyAndOrderFront` — the opposite of the parked **floater** notes above (which deliberately avoided activation for paste-back). Here focusing the Panel *is* the goal, so activating is correct.
+- `windowDidResignKey` orders the panel out, giving the click-away-to-dismiss feel of a menu-bar popover.
+
 ## Ollama from Swift
 
 Implements ADR-0004.

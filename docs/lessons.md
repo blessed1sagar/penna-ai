@@ -42,6 +42,12 @@
 - **The per-issue loop:** `git checkout main && git pull` → `git checkout -b feat/<thing>` → TDD + commit → push → open one PR that `Closes #<n>` → review → merge → repeat for the next issue.
 - A PR is opened **when one issue's slice is done**, not "at the very end of the project" — there is no single end; each issue is its own slice.
 
+## Don't default a global hotkey to a Space-based combo
+
+**2026-06-27.** Issue #14 shipped `⌃⌥Space` as the Open shortcut default (the example from the issue). The menu-bar icon opened the Panel fine, but the hotkey did nothing. Diagnosis: Space-based combos are reserved by macOS — `⌘Space` (Spotlight), `⌃Space`/`⌃⌥Space` (input-source), `⌃⌘Space` (emoji), `⌥⌘Space` (Finder). `⌃⌥Space` stays reserved at the Carbon level **even when the Keyboard pane shows it disabled**, so `RegisterEventHotKey` fails silently. Fix: keep ⌃⌥ but use a **letter** (`⌃⌥P`).
+
+**Rule:** For a global hotkey default, never use Space — pick ⌃⌥ + a letter and sanity-check it isn't a system shortcut. Also: a working menu-bar icon but a dead hotkey localises the bug to *registration*, not the Panel/presentation code. And changing the code default does **not** override a shortcut already saved to the app's `UserDefaults` (`KeyboardShortcuts_<name>`) — that key must be cleared (or rebound) for the new default to apply.
+
 ## The menu-bar app dev loop: run / stop / quit
 
 **2026-06-26.** Pressing ⌘R repeatedly in Xcode without stopping spawned duplicate menu-bar icons (multiple live instances of Penna). Because a menu-bar app has no Dock icon or window, it was unclear how to quit, and a paused debugger showing assembly looked like a crash (it wasn't).
