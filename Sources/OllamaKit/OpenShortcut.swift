@@ -10,13 +10,17 @@ import KeyboardShortcuts
 public extension KeyboardShortcuts.Name {
     /// The Open shortcut: a global hotkey that opens and focuses the Panel.
     ///
-    /// Default is **⌃⌥Space**. The ⌃⌥ pairing is deliberate — a macOS 15 bug
-    /// stopped Option-only modifiers from firing, so the default never uses a
-    /// bare Option (see docs/implementation-notes.md). Users can rebind it; the
-    /// app registers a handler against this name to show/focus the Panel.
+    /// Default is **⌃⌥P** (P for Penna). The ⌃⌥ pairing is deliberate — a macOS
+    /// 15 bug stopped Option-only modifiers from firing, so the default never
+    /// uses a bare Option. The key is a letter, not Space: Space-based combos are
+    /// a minefield of reserved system shortcuts (Spotlight ⌘Space, input-source
+    /// ⌃Space/⌃⌥Space, emoji ⌃⌘Space, Finder ⌥⌘Space). ⌃⌥Space stays reserved at
+    /// the Carbon level even when shown disabled, so RegisterEventHotKey fails
+    /// silently and the hotkey never fires (see docs/implementation-notes.md).
+    /// Users can rebind it; the app registers a handler against this name.
     static let openPanel = Self(
         "openPanel",
-        default: .init(.space, modifiers: [.control, .option])
+        default: .init(.p, modifiers: [.control, .option])
     )
 }
 

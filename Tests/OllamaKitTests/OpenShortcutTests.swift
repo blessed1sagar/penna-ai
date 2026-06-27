@@ -10,8 +10,8 @@ import KeyboardShortcuts
 @testable import OllamaKit
 
 @Suite struct OpenShortcutTests {
-    // The default Open shortcut is ⌃⌥Space. We assert the default — not the
-    // user's current binding — so this stays a stable spec even after rebinding.
+    // The default Open shortcut is ⌃⌥P. We assert the default — not the user's
+    // current binding — so this stays a stable spec even after rebinding.
     private var defaultShortcut: KeyboardShortcuts.Shortcut? {
         KeyboardShortcuts.Name.openPanel.defaultShortcut
     }
@@ -20,8 +20,14 @@ import KeyboardShortcuts
         #expect(defaultShortcut != nil)
     }
 
-    @Test func defaultShortcutKeyIsSpace() {
-        #expect(defaultShortcut?.key == .space)
+    // The key is a letter, not Space: Space-based combos are reserved by macOS
+    // (Spotlight, input-source, emoji, Finder) and silently fail to register.
+    @Test func defaultShortcutKeyIsP() {
+        #expect(defaultShortcut?.key == .p)
+    }
+
+    @Test func defaultShortcutKeyIsNotSpace() {
+        #expect(defaultShortcut?.key != .space)
     }
 
     @Test func defaultShortcutUsesControlAndOption() {
