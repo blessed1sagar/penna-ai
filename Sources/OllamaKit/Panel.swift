@@ -63,12 +63,32 @@ public final class PanelModel: ObservableObject {
     /// corrected text in the result area. (Improve is the only wired mode in #10.)
     public func run() async {
         errorMessage = nil
+        result = ""
         do {
-            result = try await client.improve(text: input)
-            // Auto-copy: put the finished result on the clipboard so the user can paste it.
+            // Mode-agnostic streaming consumption: pick the stream for the current
+            // mode (only Improve is wired here; Rephrase/Draft adopt this same path
+            // at merge), then surface each cumulative snapshot into `result` so the
+            // text appears progressively as the model generates it.
+            for try await snapshot in stream(for: selectedMode) {
+                result = snapshot
+            }
+            // Auto-copy: only ONCE the stream has finished — never on partial output.
             clipboard.write(result)
         } catch {
             errorMessage = Self.message(for: error)
+        }
+    }
+
+    /// The progressive text stream for a given mode. Only Improve is wired on
+    /// this branch; Rephrase/Draft will return their own streams at merge time.
+    private func stream(for mode: Mode) -> AsyncThrowingStream<String, Error> {
+        switch mode {
+        case .improve:
+            return client.improveStream(text: input)
+        case .rephrase, .draft:
+            // Not wired on this branch (issues #11/#12). Surface a generic error
+            // rather than silently doing nothing if somehow reached.
+            return AsyncThrowingStream { $0.finish(throwing: OllamaError.emptyInput) }
         }
     }
 

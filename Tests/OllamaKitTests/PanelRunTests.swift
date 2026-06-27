@@ -18,14 +18,29 @@ private final class RequestRecorder: @unchecked Sendable {
     var request: URLRequest?
 }
 
-// Builds a client whose fake transport returns one canned corrected text, and
-// (optionally) records the outgoing request.
+// Builds a client whose fake transports return one canned corrected text, and
+// (optionally) record the outgoing request. Both seams are wired: the
+// non-streaming `transport` (for code paths still using `generate`) and the
+// `streamingTransport` (which `run()` now uses) — the latter emits the canned
+// text as a single done:true NDJSON line.
 private func clientReturning(_ response: String, recorder: RequestRecorder? = nil) -> OllamaClient {
-    OllamaClient(transport: { request in
-        recorder?.request = request
-        let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        return (Data(#"{"response":"\#(response)","done":true}"#.utf8), http)
-    })
+    let line = #"{"response":"\#(response)","done":true}"#
+    return OllamaClient(
+        transport: { request in
+            recorder?.request = request
+            let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (Data(line.utf8), http)
+        },
+        streamingTransport: { request in
+            recorder?.request = request
+            let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            let stream = AsyncThrowingStream<String, Error> { continuation in
+                continuation.yield(line)
+                continuation.finish()
+            }
+            return (stream, http)
+        }
+    )
 }
 
 // Slice 1 (tracer bullet): Clipboard auto-fill. Opening the Panel in Improve mode
@@ -75,7 +90,11 @@ private func clientReturning(_ response: String, recorder: RequestRecorder? = ni
 // message instead of hanging or crashing, and leaves the result area empty.
 @Test @MainActor func runShowsClearErrorWhenOllamaUnreachable() async {
     let model = PanelModel(
-        client: OllamaClient(transport: { _ in throw URLError(.cannotConnectToHost) }),
+        client: OllamaClient(
+            transport: { _ in throw URLError(.cannotConnectToHost) },
+            // run() streams, so the failure must come through the streaming seam.
+            streamingTransport: { _ in throw URLError(.cannotConnectToHost) }
+        ),
         clipboard: FakeClipboard()
     )
     model.input = "teh cat sat on teh mat"
