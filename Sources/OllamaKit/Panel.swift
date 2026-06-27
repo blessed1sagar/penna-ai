@@ -52,23 +52,23 @@ public final class PanelModel: ObservableObject {
     }
 
     /// Clipboard auto-fill: prefill the input box from the current clipboard
-    /// contents. Only in Improve (issue #10) — Rephrase auto-fill is issue #11,
-    /// and Draft never auto-fills (CONTEXT.md).
+    /// contents. Applies in Improve and Rephrase; Draft never auto-fills, since
+    /// its input is an instruction the user types, not text to transform (CONTEXT.md).
     public func prefillFromClipboard() {
-        guard selectedMode == .improve else { return }
+        guard selectedMode == .improve || selectedMode == .rephrase else { return }
         input = clipboard.read() ?? ""
     }
 
-    /// Run the current mode on the input: send it to the model and show the
-    /// corrected text in the result area. (Improve is the only wired mode in #10.)
+    /// Run the current mode on the input: stream the model's output progressively
+    /// into the result area, then Auto-copy the finished text. Improve and Rephrase
+    /// are wired (#10, #11); Draft (#12) is owned by another slice.
     public func run() async {
         errorMessage = nil
         result = ""
         do {
             // Mode-agnostic streaming consumption: pick the stream for the current
-            // mode (only Improve is wired here; Rephrase/Draft adopt this same path
-            // at merge), then surface each cumulative snapshot into `result` so the
-            // text appears progressively as the model generates it.
+            // mode, then surface each cumulative snapshot into `result` so the text
+            // appears progressively as the model generates it.
             for try await snapshot in stream(for: selectedMode) {
                 result = snapshot
             }
@@ -79,15 +79,17 @@ public final class PanelModel: ObservableObject {
         }
     }
 
-    /// The progressive text stream for a given mode. Only Improve is wired on
-    /// this branch; Rephrase/Draft will return their own streams at merge time.
+    /// The progressive text stream for a given mode. Improve and Rephrase are
+    /// wired; Draft (#12) will return its own stream at merge time.
     private func stream(for mode: Mode) -> AsyncThrowingStream<String, Error> {
         switch mode {
         case .improve:
             return client.improveStream(text: input)
-        case .rephrase, .draft:
-            // Not wired on this branch (issues #11/#12). Surface a generic error
-            // rather than silently doing nothing if somehow reached.
+        case .rephrase:
+            return client.rephraseStream(text: input)
+        case .draft:
+            // Not wired yet (issue #12). Surface a generic error rather than
+            // silently doing nothing if somehow reached.
             return AsyncThrowingStream { $0.finish(throwing: OllamaError.emptyInput) }
         }
     }
