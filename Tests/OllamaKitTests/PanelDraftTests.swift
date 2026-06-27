@@ -20,6 +20,8 @@ private final class RequestRecorder: @unchecked Sendable {
 // Just the field we want to inspect from the outgoing JSON body.
 private struct SentBody: Decodable {
     let prompt: String
+    struct Options: Decodable { let temperature: Double }
+    let options: Options?
 }
 
 // Builds a client whose fake transport returns one canned text and (optionally)
@@ -52,4 +54,56 @@ private func clientReturning(_ response: String, recorder: RequestRecorder? = ni
 // not hard-coded in the view, so the view just reads it.
 @Test func draftModeHasAnInstructionPlaceholder() {
     #expect(Mode.draft.placeholder == "Tell me what to write…")
+}
+
+// Slice 5: running in Draft generates new text from the instruction (the input)
+// and shows it in the result area. The instruction must reach the model.
+@Test @MainActor func runInDraftShowsGeneratedTextFromInstruction() async {
+    let recorder = RequestRecorder()
+    let model = PanelModel(
+        client: clientReturning("Dear landlord, the heating has broken...", recorder: recorder),
+        clipboard: FakeClipboard()
+    )
+    model.selectMode(.draft)
+    model.input = "email my landlord about the broken heating"
+
+    await model.run()
+
+    #expect(model.result == "Dear landlord, the heating has broken...")
+    let payload = try? JSONDecoder().decode(SentBody.self, from: recorder.request?.httpBody ?? Data())
+    #expect(payload?.prompt.contains("email my landlord about the broken heating") == true)
+    // Proves the DRAFT brain ran (creative, temp > 0), not Improve (temp 0).
+    #expect((payload?.options?.temperature ?? 0) > 0)
+}
+
+// Slice 6: Auto-copy. When a Draft completes, the generated text is placed on the
+// clipboard automatically so the user can paste it (CONTEXT.md / ADR-0006).
+@Test @MainActor func runInDraftAutoCopiesResultToClipboard() async {
+    let clipboard = FakeClipboard()
+    let model = PanelModel(
+        client: clientReturning("Dear landlord, the heating has broken..."),
+        clipboard: clipboard
+    )
+    model.selectMode(.draft)
+    model.input = "email my landlord about the broken heating"
+
+    await model.run()
+
+    #expect(clipboard.read() == "Dear landlord, the heating has broken...")
+}
+
+// Slice 7: switching FROM Draft back to Improve restores Clipboard auto-fill —
+// the input box re-fills from the clipboard (Draft cleared it; leaving Draft
+// undoes that). CONTEXT.md: auto-fill applies to Improve/Rephrase, not Draft.
+@Test @MainActor func switchingFromDraftBackToImproveRestoresAutoFill() {
+    let model = PanelModel(
+        client: clientReturning("unused"),
+        clipboard: FakeClipboard(contents: "teh cat sat on teh mat")
+    )
+    model.selectMode(.draft)
+    #expect(model.input.isEmpty) // Draft cleared it
+
+    model.selectMode(.improve)
+
+    #expect(model.input == "teh cat sat on teh mat")
 }
