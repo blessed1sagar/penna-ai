@@ -17,7 +17,10 @@ struct PennaApp: App {
     var body: some Scene {
         // The app has no main window — it's a Dock-less menu-bar agent (ADR-0006,
         // LSUIElement set in target → Info). Settings is an inert scene that keeps
-        // SwiftUI's App happy without putting a window on screen.
+        // SwiftUI's App happy without putting a window on screen. The Open shortcut
+        // recorder lives in a window MenuBarController owns and shows itself, not
+        // here — SwiftUI's Settings scene can't be opened reliably in a Dock-less
+        // app (issue #15).
         Settings { EmptyView() }
     }
 }
