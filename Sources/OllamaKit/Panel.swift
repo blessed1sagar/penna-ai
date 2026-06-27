@@ -19,6 +19,17 @@ public enum Mode: Hashable, CaseIterable {
         case .draft: "Draft"
         }
     }
+
+    /// The placeholder shown in the empty input box. Improve/Rephrase work on
+    /// existing text (auto-filled or pasted); Draft takes an instruction
+    /// describing what to write (CONTEXT.md). Kept here so the view reads it from
+    /// one source of truth rather than hard-coding strings.
+    public var placeholder: String {
+        switch self {
+        case .improve, .rephrase: "Paste or type text…"
+        case .draft: "Tell me what to write…"
+        }
+    }
 }
 
 /// The state and behaviour behind the Panel UI, kept here (in the testable Swift
@@ -49,6 +60,17 @@ public final class PanelModel: ObservableObject {
     ) {
         self.client = client
         self.clipboard = clipboard
+    }
+
+    /// Switch the Panel to `mode` and apply the side effect that depends on the
+    /// mode change — which is why the view calls this instead of binding the
+    /// Picker straight to `selectedMode`. Switching INTO Draft clears the input
+    /// box (Draft takes a typed instruction, never clipboard text — CONTEXT.md).
+    public func selectMode(_ mode: Mode) {
+        selectedMode = mode
+        if mode == .draft {
+            input = ""
+        }
     }
 
     /// Clipboard auto-fill: prefill the input box from the current clipboard

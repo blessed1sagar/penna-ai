@@ -42,3 +42,22 @@ private struct DraftSentOptions: Decodable {
     let payload = try JSONDecoder().decode(DraftSentBody.self, from: #require(sent.httpBody))
     #expect(payload.prompt.contains("email my landlord about the broken heating"))
 }
+
+// Slice 2: empty or whitespace-only instruction must NOT call the model — it
+// throws a clear .emptyInput error so the UI can prompt the user instead of
+// waiting on a pointless model call.
+@Test func draftRejectsEmptyInstructionWithoutCallingModel() async throws {
+    let recorder = DraftRecorder()
+
+    let client = OllamaClient(transport: { request in
+        recorder.request = request // must never be reached for a blank instruction
+        let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        return (Data(#"{"response":"ok","done":true}"#.utf8), http)
+    })
+
+    await #expect(throws: OllamaError.emptyInput) {
+        _ = try await client.draft(instruction: "   \n\t  ")
+    }
+
+    #expect(recorder.request == nil)
+}
