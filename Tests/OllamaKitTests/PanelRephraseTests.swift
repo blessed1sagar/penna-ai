@@ -15,14 +15,28 @@ private final class RequestRecorder: @unchecked Sendable {
     var request: URLRequest?
 }
 
-// Builds a client whose fake transport returns one canned text and records the
-// outgoing request.
+// Builds a client whose fake transports return one canned text and (optionally)
+// record the outgoing request. Both seams are wired: the non-streaming `transport`
+// and the `streamingTransport` that `run()` now uses — the latter emits the canned
+// text as a single done:true NDJSON line.
 private func clientReturning(_ response: String, recorder: RequestRecorder? = nil) -> OllamaClient {
-    OllamaClient(transport: { request in
-        recorder?.request = request
-        let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        return (Data(#"{"response":"\#(response)","done":true}"#.utf8), http)
-    })
+    let line = #"{"response":"\#(response)","done":true}"#
+    return OllamaClient(
+        transport: { request in
+            recorder?.request = request
+            let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (Data(line.utf8), http)
+        },
+        streamingTransport: { request in
+            recorder?.request = request
+            let http = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            let stream = AsyncThrowingStream<String, Error> { continuation in
+                continuation.yield(line)
+                continuation.finish()
+            }
+            return (stream, http)
+        }
+    )
 }
 
 // Slice 4: Clipboard auto-fill in Rephrase. Opening the Panel in Rephrase mode
