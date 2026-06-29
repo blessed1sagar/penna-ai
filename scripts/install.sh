@@ -20,7 +20,7 @@ ASSET="Penna.zip"          # must match the release asset produced by package-ap
 APP_NAME="Penna.app"
 DEST="/Applications"
 
-echo "Installing Penna from $REPO…"
+echo "Installing Penna from ${REPO}…"
 
 # Download the asset from the LATEST release. The /releases/latest/download/<asset>
 # redirect always points at the newest published release, so this needs no version
