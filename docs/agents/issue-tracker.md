@@ -2,7 +2,7 @@
 
 This repo uses **GitHub Issues** for tracking work.
 
-- Repository: `blessed1sagar/ai-pa` (private)
+- Repository: `blessed1sagar/penna-ai` (private)
 - CLI: `gh` (GitHub CLI)
 
 ## Commands
