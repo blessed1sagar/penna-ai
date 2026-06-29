@@ -72,11 +72,10 @@ Updated for the menu-bar pivot (ADR-0006): v1 no longer posts synthetic keystrok
 
 If the app is ever distributed:
 
-- **Easiest path: a notarized `.dmg` outside the App Store.** Requires an **Apple Developer account (~$99/yr)** for a Developer ID certificate, then **sign + notarize** the build so it opens without the "unidentified developer" warning. People downloading it need **no Apple account** (only the App Store requires that).
+- **Easiest path: a notarized `.dmg` outside the App Store.** Sign with a Developer ID certificate, then notarize the build so it opens without the "unidentified developer" warning.
 - **The real blocker is the Ollama dependency, not Apple.** End users must install Ollama and pull the ~5 GB model on a capable Apple-Silicon Mac before the app does anything — so a plain `.dmg` realistically only serves technical users. Bundling a local runtime/model for non-technical users is a large, separate effort (parked).
 - App Store distribution may now be *technically* possible (no synthetic keystrokes), but the Ollama dependency plus App-Sandbox/networking constraints make the notarized-`.dmg` route simpler regardless.
 
-For **v1 run on your own Mac, none of this is needed.**
 Ref: [developer.apple.com/forums/thread/820594](https://developer.apple.com/forums/thread/820594)
 
 ## Reference projects (read for patterns, do not copy GPL code)
