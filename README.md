@@ -2,7 +2,7 @@
 
 A private, on-device writing assistant for macOS. Penna lives in your menu bar and helps you fix, reword, and draft text — entirely on your Mac, powered by a local [Ollama](https://ollama.com) model. Nothing you type ever leaves your machine.
 
-## Modes
+## What it does
 
 - **Improve** — fix grammar, spelling, and punctuation while keeping your wording.
 - **Rephrase** — reword text to say the same thing differently.
@@ -21,15 +21,13 @@ Open the Panel from the menu-bar icon or the Open shortcut (default ⌃⌥P), pi
 
 ## Install
 
-Penna is ad-hoc signed — no Apple Developer ID and no notarization — so you can run it without a paid Apple account.
-
 **One line (no prompts):**
 
 ```
 curl -fsSL https://raw.githubusercontent.com/blessed1sagar/penna-ai/main/scripts/install.sh | bash
 ```
 
-**Or download manually:** grab `Penna.zip` from the [latest release](https://github.com/blessed1sagar/penna-ai/releases/latest), unzip it, drag `Penna.app` to `/Applications`, then clear the download flag once:
+**Or download manually:** grab `Penna.zip` from the [latest release](https://github.com/blessed1sagar/penna-ai/releases/latest), unzip it, and drag `Penna.app` to `/Applications`. macOS quarantines apps downloaded outside the App Store, so clear that flag once:
 
 ```
 xattr -dr com.apple.quarantine /Applications/Penna.app
