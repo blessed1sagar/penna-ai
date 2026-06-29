@@ -1,64 +1,47 @@
 # Penna
 
-A privacy-first, fully local AI personal assistant for macOS — a **menu-bar app** that helps you write, running entirely on-device.
+A private, on-device writing assistant for macOS. Penna lives in your menu bar and helps you fix, reword, and draft text — entirely on your Mac, powered by a local [Ollama](https://ollama.com) model. Nothing you type ever leaves your machine.
 
-Click the menu bar icon (or press the Open shortcut) to open a small **Panel** with three modes:
+## Modes
 
-- **Improve** — fix grammar, spelling, and punctuation, keeping your wording.
+- **Improve** — fix grammar, spelling, and punctuation while keeping your wording.
 - **Rephrase** — reword text to say the same thing differently.
-- **Draft** — write a new message or email from a short instruction.
+- **Draft** — write a new message from a short instruction.
 
-You paste text in (or it auto-fills from your clipboard), pick a mode, and the result is auto-copied back to your clipboard. Nothing leaves your machine.
+Open the Panel from the menu-bar icon or the Open shortcut (default ⌃⌥P), pick a mode, and the result is copied straight back to your clipboard.
 
 ## Requirements
 
-- macOS on Apple Silicon
+- macOS 13 or later (Apple Silicon)
 - [Ollama](https://ollama.com) running locally, with the model pulled:
+
   ```
   ollama pull qwen2.5:7b-instruct-q4_K_M
   ```
 
-## Install (no Xcode needed)
+## Install
 
-Penna is a small, ad-hoc-signed menu-bar app. It is **not** signed with an Apple Developer ID and **not** notarized — a deliberate choice so anyone can build and ship it without a paid Apple account. macOS Gatekeeper only blocks apps that carry the download "quarantine" flag, so getting past it is one quick step (or zero, with the curl installer).
+Penna is ad-hoc signed — no Apple Developer ID and no notarization — so you can run it without a paid Apple account.
 
-Penna lives in the menu bar (the pencil icon) — there is no Dock icon and no app window. After installing, click the icon or press ⌃⌥P to open it. You can turn on **Launch at login** from Penna's Settings (right-click the menu-bar icon ▸ Settings).
-
-### Option A — one-line install (no manual step)
+**One line (no prompts):**
 
 ```
 curl -fsSL https://raw.githubusercontent.com/blessed1sagar/penna-ai/main/scripts/install.sh | bash
 ```
 
-This downloads the latest release, installs `Penna.app` to `/Applications`, and launches without any Gatekeeper prompt — `curl` doesn't set the quarantine flag, so there's nothing to clear.
+**Or download manually:** grab `Penna.zip` from the [latest release](https://github.com/blessed1sagar/penna-ai/releases/latest), unzip it, drag `Penna.app` to `/Applications`, then clear the download flag once:
 
-### Option B — download and drag
+```
+xattr -dr com.apple.quarantine /Applications/Penna.app
+```
 
-1. Download `Penna.zip` from the [latest Release](https://github.com/blessed1sagar/penna-ai/releases/latest) and unzip it.
-2. Drag `Penna.app` into `/Applications`.
-3. Run this once to clear the download quarantine flag, then open Penna normally:
-   ```
-   xattr -dr com.apple.quarantine /Applications/Penna.app
-   ```
-   On macOS 15.1+ the Finder "Open Anyway" path is unreliable for apps without a Developer ID, so this `xattr` strip is the reliable way through Gatekeeper.
+Penna runs in the menu bar (no Dock icon). Turn on **Launch at login** from its Settings.
 
-### Option C — build from source (developers)
+## Build from source
 
-This is the zero-friction path: an app you build locally is never quarantined, so it just runs. Open `Penna/Penna.xcodeproj` in Xcode and Build & Run. To produce a distributable zip for a Release, build with the Release configuration, then run `scripts/package-app.sh <path-to-Penna.app>` and attach the resulting `Penna.zip` to a GitHub Release (the script prints the exact build + upload steps).
+```
+git clone https://github.com/blessed1sagar/penna-ai.git
+open penna-ai/Penna/Penna.xcodeproj   # then Build & Run in Xcode
+```
 
-## Development
-
-- `swift test` — run the `OllamaKit` unit tests
-- `swift run ollama-tracer` — send one real prompt to local Ollama (connectivity check)
-- The macOS app is built and run from **Xcode** (open the `.xcodeproj`).
-
-## Docs
-
-- `docs/CONTEXT.md` — the domain glossary (what each term means)
-- `docs/adr/` — architecture decisions (start with ADR-0006 for the menu-bar design)
-- `docs/implementation-notes.md` — code-time how-to notes
-- Work is tracked in GitHub Issues (`blessed1sagar/penna-ai`).
-
-## Status
-
-v1 has shipped. The menu-bar app (Improve / Rephrase / Draft, on local Ollama) is complete and runnable — see [Install](#install-no-xcode-needed) to get it. The `OllamaKit` package provides the non-UI logic. Further work (distribution, polish) is tracked in GitHub Issues.
+`swift test` runs the `OllamaKit` unit tests. See `docs/CONTEXT.md` for the domain language and `docs/adr/` for the architecture decisions.
