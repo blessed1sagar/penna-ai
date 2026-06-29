@@ -6,7 +6,7 @@ import Combine
 /// - `draft`    — generate new text from a typed instruction
 // Hashable (not just Equatable) so SwiftUI's Picker can use a Mode as the
 // selection value and tag. Hashable refines Equatable, so existing == still holds.
-public enum Mode: Hashable, CaseIterable {
+public enum Mode: Hashable, CaseIterable, Sendable {
     case improve
     case rephrase
     case draft
