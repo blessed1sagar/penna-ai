@@ -5,6 +5,7 @@
 
 import SwiftUI
 import AppKit
+import OllamaKit
 
 @main
 struct PennaApp: App {
@@ -30,5 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         menuBar = MenuBarController()
+        // Warm up the model at launch so the first real run has no cold-start delay
+        // (~3–10s to load the 7B model — issue #7). Model residency is server-side,
+        // keyed by model name, so a dedicated client here warms the same model the
+        // Panel will use. Best-effort: warmUp() swallows errors (Ollama may still be
+        // starting), and the Task keeps launch from blocking on it.
+        Task { await OllamaClient().warmUp() }
     }
 }
