@@ -98,7 +98,8 @@ public struct OllamaClient: Sendable {
                 model: model,
                 prompt: prompt,
                 stream: false,
-                options: temperature.map { GenerateRequest.Options(temperature: $0) }
+                options: temperature.map { GenerateRequest.Options(temperature: $0) },
+                keepAlive: -1
             )
         )
 
@@ -122,6 +123,25 @@ public struct OllamaClient: Sendable {
         return decoded.response
     }
 
+    /// Best-effort warm-up: pull the model into memory at launch so the first real
+    /// run has no cold-start delay (issue #7). Sends an empty-prompt load request
+    /// with keep_alive: -1 — Ollama treats an empty prompt as "load and pin this
+    /// model" without generating any text. All errors are swallowed: if the server
+    /// isn't up yet, the first real run surfaces the clear "couldn't reach" error,
+    /// so launch must never fail here. The loopback guard still applies (ADR-0001)
+    /// — nothing leaves the machine, not even a warm-up.
+    public func warmUp() async {
+        guard isLoopbackHost(baseURL.host) else { return }
+        let url = baseURL.appendingPathComponent("api/generate")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONEncoder().encode(
+            GenerateRequest(model: model, prompt: "", stream: false, options: nil, keepAlive: -1)
+        )
+        _ = try? await transport(request)
+    }
+
     /// Streams a prompt's completion: returns a stream of CUMULATIVE text
     /// snapshots — each value is the full text generated so far — so a caller
     /// (e.g. the Panel) can show output progressively as the model produces it.
@@ -139,7 +159,8 @@ public struct OllamaClient: Sendable {
                 model: model,
                 prompt: prompt,
                 stream: true,
-                options: temperature.map { GenerateRequest.Options(temperature: $0) }
+                options: temperature.map { GenerateRequest.Options(temperature: $0) },
+                keepAlive: -1
             )
         )
         request.httpBody = body
@@ -170,7 +191,10 @@ public struct OllamaClient: Sendable {
                         guard !line.isEmpty else { continue }
                         let chunk = try JSONDecoder().decode(StreamChunk.self, from: Data(line.utf8))
                         accumulated += chunk.response
-                        continuation.yield(accumulated)
+                        // Clean the CUMULATIVE snapshot (not the per-line delta): a
+                        // conversational wrapper appears at the front of every
+                        // snapshot, so stripping must run on the accumulated text.
+                        continuation.yield(stripConversationalWrapper(accumulated))
                         if chunk.done { break }
                     }
                     continuation.finish()
@@ -192,9 +216,19 @@ private struct GenerateRequest: Encodable {
     /// Per-request model knobs (e.g. temperature). Omitted from the JSON when nil
     /// — Swift's synthesized Encodable skips nil optionals.
     let options: Options?
+    /// How long Ollama keeps the model resident after this request. We send -1
+    /// ("keep loaded indefinitely") so the 7B model stays warm between runs and
+    /// the user never pays the ~3–10s cold-load cost twice (issue #7).
+    let keepAlive: Int?
 
     struct Options: Encodable {
         let temperature: Double
+    }
+
+    // Ollama's JSON uses snake_case for keep_alive; the rest map 1:1.
+    enum CodingKeys: String, CodingKey {
+        case model, prompt, stream, options
+        case keepAlive = "keep_alive"
     }
 }
 

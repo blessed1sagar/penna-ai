@@ -81,3 +81,19 @@ private func collect(_ stream: AsyncThrowingStream<String, Error>) async throws 
 
     #expect(snapshots == ["The ", "The cat ", "The cat sat."])
 }
+
+// Slice 4: when the model wraps its answer in a conversational preamble despite
+// the prompt, generateStream cleans each cumulative snapshot so only the real
+// content reaches the caller — the final snapshot has no "Sure, here's…:" wrapper
+// (issue #7).
+@Test func streamingGenerateStripsConversationalWrapper() async throws {
+    let lines = [
+        #"{"response":"Sure, here's the corrected text:\n\n","done":false}"#,
+        #"{"response":"The cat sat.","done":true}"#,
+    ]
+    let client = OllamaClient(streamingTransport: streamingTransport(lines: lines))
+
+    let snapshots = try await collect(client.generateStream(prompt: "fix this"))
+
+    #expect(snapshots.last == "The cat sat.")
+}
