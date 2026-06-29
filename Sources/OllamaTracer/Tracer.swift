@@ -6,7 +6,7 @@ import OllamaKit
 @main
 struct Tracer {
     static func main() async {
-        // Default OllamaClient() -> real URLSession + the v1 model on localhost:11434.
+        // Default OllamaClient() -> real URLSession + the v1 model on 127.0.0.1:11434.
         let client = OllamaClient()
         let prompt = "Correct the grammar and reply with only the corrected sentence: "
             + "\"me and him goes to the store yesterday\""

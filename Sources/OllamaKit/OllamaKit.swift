@@ -47,7 +47,12 @@ public struct OllamaClient: Sendable {
     private let streamingTransport: StreamingTransport
 
     public init(
-        baseURL: URL = URL(string: "http://localhost:11434")!,
+        // IPv4 loopback, not the `localhost` name: macOS resolves `localhost` to
+        // IPv6 `::1` first, but a default Ollama install binds 127.0.0.1 only — so
+        // `localhost` makes a doomed `::1` attempt that adds latency and can time
+        // out before the IPv4 fallback. `isLoopbackHost` accepts `127.*`, so the
+        // ADR-0001 loopback-only guarantee is preserved.
+        baseURL: URL = URL(string: "http://127.0.0.1:11434")!,
         model: String = "qwen2.5:7b-instruct-q4_K_M",
         transport: @escaping Transport = { try await URLSession.shared.data(for: $0) },
         streamingTransport: @escaping StreamingTransport = OllamaClient.defaultStreamingTransport
