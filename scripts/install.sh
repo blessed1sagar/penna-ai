@@ -3,7 +3,7 @@
 # install.sh — one-line installer for Penna (issue #30).
 #
 # Run with:
-#   curl -fsSL https://raw.githubusercontent.com/blessed1sagar/ai-pa/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/blessed1sagar/penna-ai/main/scripts/install.sh | bash
 #
 # WHY this works with no "Open Anyway" dance: Gatekeeper only blocks apps that carry
 # the download `com.apple.quarantine` flag, and that flag is set by the app that
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-REPO="blessed1sagar/ai-pa"
+REPO="blessed1sagar/penna-ai"
 ASSET="Penna.zip"          # must match the release asset produced by package-app.sh
 APP_NAME="Penna.app"
 DEST="/Applications"

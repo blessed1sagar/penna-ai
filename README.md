@@ -1,4 +1,4 @@
-# ai-pa
+# Penna
 
 A privacy-first, fully local AI personal assistant for macOS — a **menu-bar app** that helps you write, running entirely on-device.
 
@@ -27,14 +27,14 @@ Penna lives in the menu bar (the pencil icon) — there is no Dock icon and no a
 ### Option A — one-line install (no manual step)
 
 ```
-curl -fsSL https://raw.githubusercontent.com/blessed1sagar/ai-pa/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/blessed1sagar/penna-ai/main/scripts/install.sh | bash
 ```
 
 This downloads the latest release, installs `Penna.app` to `/Applications`, and launches without any Gatekeeper prompt — `curl` doesn't set the quarantine flag, so there's nothing to clear.
 
 ### Option B — download and drag
 
-1. Download `Penna.zip` from the [latest Release](https://github.com/blessed1sagar/ai-pa/releases/latest) and unzip it.
+1. Download `Penna.zip` from the [latest Release](https://github.com/blessed1sagar/penna-ai/releases/latest) and unzip it.
 2. Drag `Penna.app` into `/Applications`.
 3. Run this once to clear the download quarantine flag, then open Penna normally:
    ```
@@ -57,8 +57,8 @@ This is the zero-friction path: an app you build locally is never quarantined, s
 - `docs/CONTEXT.md` — the domain glossary (what each term means)
 - `docs/adr/` — architecture decisions (start with ADR-0006 for the menu-bar design)
 - `docs/implementation-notes.md` — code-time how-to notes
-- Work is tracked in GitHub Issues (`blessed1sagar/ai-pa`).
+- Work is tracked in GitHub Issues (`blessed1sagar/penna-ai`).
 
 ## Status
 
-Early development. The `OllamaKit` package works; the menu-bar app is being built (issues #9–#15).
+v1 has shipped. The menu-bar app (Improve / Rephrase / Draft, on local Ollama) is complete and runnable — see [Install](#install-no-xcode-needed) to get it. The `OllamaKit` package provides the non-UI logic. Further work (distribution, polish) is tracked in GitHub Issues.

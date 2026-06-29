@@ -1,4 +1,4 @@
-# ai-pa
+# Penna
 
 A privacy-first, fully local AI personal assistant for macOS. The first deliverable (v1) is a **menu-bar app** whose single UI is a **Panel** that improves, rephrases, and drafts short text entirely on-device. Later tasks (docs, decks, notes, podcasts, etc.) are parked for future projects.
 

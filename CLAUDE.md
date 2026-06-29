@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`ai-pa` is a privacy-first, fully local AI personal assistant for macOS. v1 is a **menu-bar app**: a Panel with three modes — **Improve** (grammar fix), **Rephrase** (reword), and **Draft** (write from an instruction) — running entirely on-device via local Ollama. See `docs/CONTEXT.md` for the domain language and `docs/adr/` for decisions (ADR-0006 defines the menu-bar design).
+`penna-ai` is a privacy-first, fully local AI personal assistant for macOS. v1 is a **menu-bar app** ("Penna"): a Panel with three modes — **Improve** (grammar fix), **Rephrase** (reword), and **Draft** (write from an instruction) — running entirely on-device via local Ollama. See `docs/CONTEXT.md` for the domain language and `docs/adr/` for decisions (ADR-0006 defines the menu-bar design).
 
-The `OllamaKit` Swift package + tracer exist; the macOS app is being built (see GitHub issues #9–#15).
+v1 has shipped: the menu-bar app is complete, built on the `OllamaKit` Swift package + tracer. Remaining work (distribution, docs) is tracked in GitHub Issues.
 
 ## Stack
 
@@ -38,7 +38,7 @@ Captured in `docs/lessons.md`. Update it after any corrected mistakes.
 
 ### Issue tracker
 
-Issues live in GitHub Issues (`blessed1sagar/ai-pa`, private). See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues (`blessed1sagar/penna-ai`, private). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

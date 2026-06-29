@@ -77,7 +77,7 @@ Manual steps this script can't do (need Xcode GUI / your GitHub login):
 
 2. Create / edit a GitHub Release and attach dist/Penna.zip, e.g. with gh:
      gh release create v1.0.0 dist/Penna.zip \
-       --repo blessed1sagar/ai-pa \
+       --repo blessed1sagar/penna-ai \
        --title "Penna v1.0.0" \
        --notes "Download Penna.zip, unzip, and see the README install steps."
    (or upload Penna.zip via the GitHub Releases web UI).
