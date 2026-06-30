@@ -2,6 +2,10 @@
 
 A private, on-device writing assistant for macOS. Penna lives in your menu bar and helps you fix, reword, and draft text — entirely on your Mac, powered by a local [Ollama](https://ollama.com) model. Nothing you type ever leaves your machine.
 
+## Demo
+
+https://github.com/user-attachments/assets/2d5b5923-9d97-4b63-89f6-345bc9a8ffb6
+
 ## What it does
 
 - **Improve** — fix grammar, spelling, and punctuation while keeping your wording.
